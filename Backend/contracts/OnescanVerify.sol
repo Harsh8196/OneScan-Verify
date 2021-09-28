@@ -10,13 +10,13 @@ contract OnescanVerify is Ownable {
     struct IssuerRequest {
         address issuerAddress;
         string issuerCID;
-        string contractType;
         bool approval; 
     }
     struct IssuerContract {
         address contractaddress;
-        string contractCID;
+        string contractName;
         uint256 requestIndex;
+        string contractType;
     }
     struct IssuerContractArray {
         IssuerContract[] contractArray;
@@ -24,38 +24,46 @@ contract OnescanVerify is Ownable {
     IssuerRequest[] public issuerRequest;
     uint256 public approvalCounts;
     mapping(address=>IssuerContractArray) issuerListOfContract;
+    mapping(address=>bool) public issuerAddress;
     
     constructor() {
         admin = msg.sender;
     }
 
-    function applyForRequest(string memory _issuerCID, string memory _contractType) public {
+    function applyForRequest(string memory _issuerCID) public {
+        require(!issuerAddress[msg.sender],'Alaredy register as Issuer.');
         issuerRequest.push(IssuerRequest({
             issuerAddress:msg.sender,
             issuerCID:_issuerCID,
-            contractType:_contractType,
             approval:false
         }));
+        issuerAddress[msg.sender] = true;
     }
 
-    function approveRequest(uint256 _index) public onlyOwner{
+    function approveRequest(uint256 _index) public {
         require(issuerRequest[_index].approval == false, 'Issuer request already approved.');
         issuerRequest[_index].approval = true;
         approvalCounts = approvalCounts + 1;
+    }
+
+    function issuerRequestCount() public view returns (uint256 result)  {
+        uint256 length = issuerRequest.length;
+        return length;
     }
 
     function getOwnerContract(address _issuerAddress) public view returns(IssuerContract[] memory) {
         return(issuerListOfContract[_issuerAddress].contractArray);
     }
 
-    function createNewContract(uint256 _index) public {
+    function createNewContract(uint256 _index,string memory _contractType,string memory _contractName) public {
         require(issuerRequest[_index].issuerAddress == msg.sender && issuerRequest[_index].approval == true,'Issuer Request is not approved.');
-        address newContract = address(new physicalCertificate());
+        address newContract = address(new physicalCertificate(msg.sender));
         
         issuerListOfContract[msg.sender].contractArray.push(IssuerContract({
             contractaddress:newContract,
-            contractCID:issuerRequest[_index].issuerCID,
-            requestIndex: _index
+            contractName:_contractName,
+            requestIndex: _index,
+            contractType: _contractType
         }));
     }
 }
@@ -65,27 +73,33 @@ contract physicalCertificate is Ownable,ERC721,ERC721Enumerable {
     Counters.Counter private _tokenIds;
 
     struct Claimer {
-        string certificateCID;
         string secretPassword;
         string secretPin;
         address claimerAddress;
         bool claimStatus;
     }
-
+    address admin;
     mapping(uint256=>Claimer) tokenIdToClaimer;
     mapping(uint256 => string) private _tokenURIs;
+   
 
-    constructor() ERC721('Physical Certificate NFT','PCN'){}
+    constructor(address issuerAddress) ERC721('Physical Certificate NFT','PCN'){
+        admin = issuerAddress;
+    }
+    modifier restricted() {
+        require(admin == msg.sender);
+        _;
+    }
 
-    function mint(string memory _certificateCID,string memory _secretPassword,string memory _secretPin,string memory _tokenURI) public payable onlyOwner{
+    function mint(string memory _secretPassword,string memory _secretPin,string memory _tokenURI) public payable restricted returns(uint256){
         require(msg.value >= 0.01 ether, 'Require minimum minting amount.');
         uint256 _newTokenId = _tokenIds.current();
         _mint(msg.sender,_newTokenId);
         _tokenIds.increment();
         _setTokenURI(_newTokenId, _tokenURI);
-        setClaimerDetail(_certificateCID,_secretPassword,_secretPin,_newTokenId);
+        setClaimerDetail(_secretPassword,_secretPin,_newTokenId);
         
-        
+        return _newTokenId;
     }
 
     function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
@@ -93,9 +107,8 @@ contract physicalCertificate is Ownable,ERC721,ERC721Enumerable {
         _tokenURIs[tokenId] = _tokenURI;
     }
 
-    function setClaimerDetail(string memory _certificateCID,string memory _secretPassword,string memory _secretPin,uint256 _tokenId) internal {
+    function setClaimerDetail(string memory _secretPassword,string memory _secretPin,uint256 _tokenId) internal {
         Claimer memory newClaimerDetails = Claimer({
-            certificateCID:_certificateCID,
             secretPassword:_secretPassword,
             secretPin:_secretPin,
             claimerAddress: address(0x00),
@@ -107,38 +120,35 @@ contract physicalCertificate is Ownable,ERC721,ERC721Enumerable {
 
     function claimCertificate(uint256 _tokenId,string memory _secretPassword,string memory _secretPin) public returns (bool result){
         require(_exists(_tokenId), 'This Tokenid not exists.');
-        Claimer memory newClaimerCertificate = tokenIdToClaimer[_tokenId];
-        require(newClaimerCertificate.claimStatus = false, 'This certificate alredy claimed.');
-        require((keccak256(abi.encodePacked(newClaimerCertificate.secretPassword)) == keccak256(abi.encodePacked(_secretPassword)) && keccak256(abi.encodePacked(newClaimerCertificate.secretPin)) == keccak256(abi.encodePacked(_secretPin))), 'This claimer is not authorize to claim certificate.');
-        newClaimerCertificate.claimerAddress = msg.sender;
-        newClaimerCertificate.claimStatus = true;
-        transferOwnership(msg.sender);
-        return newClaimerCertificate.claimStatus;
+        require(tokenIdToClaimer[_tokenId].claimStatus == false, 'This certificate alredy claimed.');
+        require((keccak256(abi.encodePacked(tokenIdToClaimer[_tokenId].secretPassword)) == keccak256(abi.encodePacked(_secretPassword)) && keccak256(abi.encodePacked(tokenIdToClaimer[_tokenId].secretPin)) == keccak256(abi.encodePacked(_secretPin))), 'This claimer is not authorize to claim certificate.');
+        safeTransferFrom(admin,msg.sender,_tokenId);
+        tokenIdToClaimer[_tokenId].claimerAddress = msg.sender;
+        tokenIdToClaimer[_tokenId].claimStatus = true;
+        return tokenIdToClaimer[_tokenId].claimStatus;
     }
 
-    function checkAuthenticity(uint256 _tokenId,string memory _secretPin) public view returns (bool result) {
+    function checkAuthenticity(uint256 _tokenId,string memory _secretPin) public view returns (string memory result) {
         require(_exists(_tokenId), 'This Tokenid not exists.');
-        Claimer storage getCertificate = tokenIdToClaimer[_tokenId];
-        require(keccak256(abi.encodePacked(getCertificate.secretPin)) == keccak256(abi.encodePacked(_secretPin)), 'Entered pin is not valid.');
-        return true;
+        require(keccak256(abi.encodePacked(tokenIdToClaimer[_tokenId].secretPin)) == keccak256(abi.encodePacked(_secretPin)), 'Entered pin is not valid.');
+        return _tokenURIs[_tokenId];
     }
 
-    function getSecretPin() public view onlyOwner returns(uint256 _result) {
-        uint256 randomNumber = uint256(vrf());
-        return (randomNumber % 4);
+    function getClaimStatus(uint256 _tokenId) public view returns (bool result){
+        require(_exists(_tokenId), 'This Tokenid not exists.');
+        return (tokenIdToClaimer[_tokenId].claimStatus);
     }
-
-    function vrf() public view returns (bytes32 result) {
-        uint[1] memory bn;
-        bn[0] = block.number;
-        assembly {
-        let memPtr := mload(0x40)
-        if iszero(staticcall(not(0), 0xff, bn, 0x20, memPtr, 0x20)) {
-            invalid()
-        }
-        result := mload(memPtr)
-        }
-    }
+    // function vrf() public view returns (bytes32 result) {
+    //     uint[1] memory bn;
+    //     bn[0] = block.number;
+    //     assembly {
+    //     let memPtr := mload(0x40)
+    //     if iszero(staticcall(not(0), 0xff, bn, 0x20, memPtr, 0x20)) {
+    //         invalid()
+    //     }
+    //     result := mload(memPtr)
+    //     }
+    // }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);

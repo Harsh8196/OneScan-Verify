@@ -18,10 +18,11 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 //
 // const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const mnemonic = "comic hero roof harsh main make please ill slush away spice slab"
+const privateKeyTest = '85d00cb87da386d7d617a75841000d263dc3147937f050f6c61bd925e3f751be';
 
 module.exports = {
   /**
@@ -45,6 +46,31 @@ module.exports = {
      host: "127.0.0.1",     // Localhost (default: none)
      port: 7545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
+    },
+    testnet: {
+      provider: () => {
+        return new HDWalletProvider(
+          mnemonic,
+          'https://api.s0.b.hmny.io'
+        );
+      },
+      network_id: 1666700000, // 1666600000 for mainnet
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    testnetHar: {
+      provider: () => {
+        if (!privateKeyTest.trim()) {
+          throw new Error(
+            'Please enter a private key with funds, you can use the default one'
+          );
+        }
+        return new HDWalletProvider({
+          privateKeys: [privateKeyTest],
+          providerOrUrl: 'https://api.s0.b.hmny.io',
+        });
+      },
+      network_id: 1666700000,
     },
     // Another network with more advanced options...
     // advanced: {
@@ -87,8 +113,8 @@ module.exports = {
        optimizer: {
          enabled: false,
          runs: 200
-       },
-       evmVersion: "byzantium"
+       }
+      //  evmVersion: "byzantium"
       }
     }
   },
