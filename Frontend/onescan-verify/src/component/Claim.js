@@ -180,7 +180,7 @@ function Claim() {
                                         <hr className="bg-danger border-2 border-top border-danger mb-3"></hr>
                                         <div className="row mb-3">
                                             <label htmlFor="fullname" className="form-label col-lg-4">Full Name</label>
-                                            <div className="col-lg-6">
+                                            <div className="col-lg-6 col-sm-4">
                                                 <span id="fullname" aria-describedby="fullnameHelp" type='text'>
                                                     {fullName}
                                                 </span>
@@ -188,7 +188,7 @@ function Claim() {
                                         </div>
                                         <div className="row mb-3">
                                             <label htmlFor="enrolmentid" className="form-label col-lg-4">Enrolment Id</label>
-                                            <div className="col-lg-6">
+                                            <div className="col-lg-6 col-sm-4">
                                                 <span id="enrolmentid" aria-describedby="enrolmentidHelp" type='text'>
                                                     {enrolmentId}
                                                 </span>
@@ -196,7 +196,7 @@ function Claim() {
                                         </div>
                                         <div className="row mb-3">
                                             <label htmlFor="companyName" className="form-label col-lg-4">Certificate Issuer Name</label>
-                                            <div className="col-lg-6">
+                                            <div className="col-lg-6 col-sm-4">
                                                 <span id="companyName" aria-describedby="companyNameHelp" type='text'>
                                                     {companyName}
                                                 </span>
@@ -204,7 +204,7 @@ function Claim() {
                                         </div>
                                         <div className="row mb-3">
                                             <label htmlFor="issuerStatus" className="form-label col-lg-4">Authenticity</label>
-                                            <div className="col-lg-6">
+                                            <div className="col-lg-6 col-sm-4">
                                                 <span id="issuerStatus" aria-describedby="issuerStatusHelp" type='text' className="text-success fw-bold">
                                                     Verifyed by Onescan
                                                 </span>

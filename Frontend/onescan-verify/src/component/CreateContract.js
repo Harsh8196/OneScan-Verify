@@ -266,7 +266,7 @@ function CreateContract() {
             
             const Id =tokenID.events.Transfer.returnValues.tokenId
             const hostName = window.location.host
-            const claimURL = 'http://' + hostName + '/claim/' + selectedContract + '/' + Id
+            const claimURL = 'https://' + hostName + '/claim/' + selectedContract + '/' + Id
             // console.log(claimURL)
             QRCode.toDataURL(claimURL).then(async (data) => {
                 const imageBuff = Buffer(data.split(',')[1], "base64")

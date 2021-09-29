@@ -5,6 +5,7 @@ import OnescanVerify from '../script/OnescanVerify'
 import MetaMaskOnboarding from '@metamask/onboarding';
 import { create } from 'ipfs-http-client'
 import { Link } from 'react-router-dom'
+import web3 from '../script/web3_';
 
 
 const ipfsClient = create('https://ipfs.infura.io:5001/api/v0')
