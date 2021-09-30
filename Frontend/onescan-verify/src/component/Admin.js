@@ -46,7 +46,7 @@ function Admin() {
             var issuerRequestArray = []
             // console.log(await OnescanVerify.methods.issuerRequestCount().call())
             const issuerRequestCount = await OnescanVerify.methods.issuerRequestCount().call();
-            for (var i = 0; i < 1; i++) {
+            for (var i = 0; i < issuerRequestCount; i++) {
                 const issuerRequestResult = await OnescanVerify.methods.issuerRequest(i).call();
                 const obj = {
                     issuerArray: issuerRequestResult,

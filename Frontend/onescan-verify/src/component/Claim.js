@@ -92,6 +92,7 @@ function Claim() {
 
             })
             setVerificationStatus(true)
+            console.log(await instance.methods.ownerOf(tokenId).call())
         } catch (err) {
             setErrorMessage(err.message)
             // console.log(err.message)

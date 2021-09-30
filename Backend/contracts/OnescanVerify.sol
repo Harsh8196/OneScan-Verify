@@ -122,7 +122,7 @@ contract physicalCertificate is Ownable,ERC721,ERC721Enumerable {
         require(_exists(_tokenId), 'This Tokenid not exists.');
         require(tokenIdToClaimer[_tokenId].claimStatus == false, 'This certificate alredy claimed.');
         require((keccak256(abi.encodePacked(tokenIdToClaimer[_tokenId].secretPassword)) == keccak256(abi.encodePacked(_secretPassword)) && keccak256(abi.encodePacked(tokenIdToClaimer[_tokenId].secretPin)) == keccak256(abi.encodePacked(_secretPin))), 'This claimer is not authorize to claim certificate.');
-        safeTransferFrom(admin,msg.sender,_tokenId);
+        _transfer(admin, msg.sender, _tokenId);
         tokenIdToClaimer[_tokenId].claimerAddress = msg.sender;
         tokenIdToClaimer[_tokenId].claimStatus = true;
         return tokenIdToClaimer[_tokenId].claimStatus;

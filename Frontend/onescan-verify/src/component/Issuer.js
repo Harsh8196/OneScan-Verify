@@ -118,6 +118,7 @@ function Issuer() {
 
             const result = await OnescanVerify.methods.applyForRequest(metaData.path.toString()).send({ from: accounts[0] })
             // console.log(result)
+            window.location.reload()
         } catch (err) {
             setErrorMessage(err.message)
             // console.log(err)
